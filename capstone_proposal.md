@@ -5,39 +5,60 @@ November 16, 2018
 
 ## Book Recommendation Engine
 
-### Project overview
+### Domain background
 
 The goal of this project is to implement a recommendation engine for books. 
 
-Recommendation engines, or *Recommender systems*, are widely deployed to offer users recommended content or products. Such systems broadly fall into two categories depending on the model and algorithms used: *Collaborative* and *Content-based* filtering [1]. Collaborative filtering models produce recommendations based on a user's past behaviour and preferences, as well as those of other users exhibiting similar preferences. Content-based models are based on characteristics of the product or content in question to recommend items with similar properties. *Hybrid* recommender systems combine these two approaches.
+Recommendation engines, or *Recommender systems*, are widely deployed to offer users recommended content or products. Such systems broadly fall into two categories depending on the model and algorithms used: *Collaborative* and *Content-based* filtering [1]. Collaborative filtering models produce recommendations based on a user's past behaviour and preferences, as well as those of other users exhibiting similar preferences. Content-based models are based on characteristics of the product or content in question to recommend items with similar properties. Many *hybrid* recommender systems combine these two approaches in various ways.
+
+
 
 ### Problem Statement
 
 Regardless of the model used a recommendation engine needs information about a given user's preferences in order to provide recommendations perceived as relevant and useful. Without such information we have what is known as the *cold-start problem*. 
 Our recommendation engine needs to be able to cope with this scenario, as well as the preferred case where it actually can access such data directly. 
 
+### Datasets and inputs
+
 The recommendation engine will be based on a Kaggle dataset containing user ratings for 10,000 "popular" books from [Goodreads](https://www.goodreads.com). The dataset is available [here](https://www.kaggle.com/zygmunt/goodbooks-10k/home). In this project I will use an updated version of the dataset with duplicates removed and many more ratings (around 6 million) retrieved from [this source](https://github.com/zygmuntz/goodbooks-10k).
 
-The dataset contains limited data on each book, which means that a content-based filtering approach would need additional data from another source. The dataset does contain around 34,000 user-defined *tags* along with around 1 million combinations of these tags applied to books. However, an initial inspection of this data shows that the overall quality is low and suggests that a useful subset of this data could end up being too small for such a purpose.
+The dataset contains limited data on each book, which means that a content-based filtering approach would need additional data from another source. The dataset does contain around 34,000 user-defined *tags* along with around 1 million combinations of these tags applied to books. An initial inspection of this data shows that the overall quality is low. Many of the user-defined tags have no relation to the books (e.g. the format, which year the book was read, etc). There are also many cases of different spellings of essentially the same tags, meaning substantial cleaning will be required to use this data in a content-based model.
 
 In addition to this dataset I will make use of [Goodreads APIs](https://www.goodreads.com/api). Recommendations for users who have a Goodreads account will be based on fetching their reading history using this API. I have personally used Goodreads actively since the service appeared almost 10 years ago and look forward to testing the end result in this project on my own account data!
 
-Goodreads also offers API endpoints for retrieving more detailed data about a book, such as a back-cover synopsis, which could be used to build a content-based model. I will evaluate this approach as part of the project.
+Goodreads also offers API endpoints for retrieving more detailed data about a book, such as a back-cover synopsis, which could be used to enhance a content-based model. I will evaluate this approach as part of the project.
 
-One challenge with this dataset worth noting right at the outset is that it only contains a subset of the books in the Goodreads database. Being more than a year old it only contains books published before early 2017, for instance. An initial test based on fetching the list of books read from my own account via the API shows that only 98 of 200 books are present in the dataset. This is a sample of one, but it could mean that the input to the recommendation engine becomes more limited for users whose reading habits don't align well with the majority of readers.
+One challenge with this dataset worth noting right at the outset is that it contains a subset of the books in the Goodreads database. Being more than a year old it only contains books published before early 2017, for instance. An initial test based on fetching the list of books read from my own account via the API shows that only 98 of 200 books are present in the dataset. This is a sample of one, but it could mean that the input to the recommendation engine becomes more limited for users whose reading habits don't align well with the majority of readers.
 
 ### Solution Statement
 
-As mentioned above, the recommendation engine will need to handle two scenarios: Either we have access to a user's preferences (reading history, perhaps with a rating of each book) via Goodreads' APIs, or we will have to ask the user to indicate in some way what kind of books he or she likes to read.
+As mentioned above, the recommendation engine will need to handle two scenarios: Either we have access to a user's preferences (reading history, perhaps with a rating of each book) via Goodreads' APIs, or we will have to ask the user to indicate in some way what kind of books he or she likes to read. In the latter case the solution will be to first present the user with a number of books and ask for some kind of opinion (a rating, a thumbs-up or thumbs-down, or similar) and use this input to produce recommendations.
 
-For the first scenario the recommendations will be based on similar users' preferences (books read along with their ratings) in the dataset. The initial assumption is that a model based on Matrix Factorization should be feasible to build and train based on this dataset. By splitting the data in a training and test set we can use the prediction accuracy as an **evaluation metric** to say something about the performance of the recommendation engine.
+A collaborative recommendation engine will be implemented based on similar users' preferences (books read along with their ratings) in the dataset. The initial assumption is that a model based on Matrix Factorization should be feasible to build and train based on this dataset. 
 
-For the second scenario where we don't have any information about the user's preferences, the solution will be to first present the user with a number of books and ask for some kind of opinion (a rating, a thumbs-up or thumbs-down, or similar) and use this input to produce recommendations. Here a different model will need to be built, with a rating-based clustering of users and books. An initial strategy for selecting books to present would be to pick the *n* top rated books from each cluster. Based on the user's input we should be able to assign him or her to one of the clusters and recommend books that other users in this cluster rate highly. 
+A content-based recommendation engine will be implemented based on information about the books themselves. Here the user-defined tags enhanced with additional data extracted via APIs will be the basis for a clustering model.
 
-In terms of measuring the peformance of the recommendation engine we will be able to objectively calculate the accuracy of its predictions for the first model described above. In the second scenario, but also to some extent in the first, the most important measure will perhaps be the user's perception of the quality if the recommendations that matter in the end. If I am consistently recommended books that I don't find interesting it is no consolation that the model has a high prediction accuracy. Perhaps those other users aren't so similar after all. 
+### Benchmark model
 
+A recommendation engine producing random recommendations will be used for benchmarking the different models described above.
 
+### Evaluation metrics
+
+**Prediction accuracy** will be used as the evaluation metric for both models. The data will be split into a training and a test set, where the former will be used to train the models, and the prediction accuracy will be measured on the test set. The initial assumption here is that a valid recommendation corresponds to a user not just having read and rated a book, but actually given the book a high rating.
+
+### Project design
+
+The initial activity will consist of an analysis of the Goodreads dataset, including an exploration of the data, necessary data type conversions and an evaluation of missing values if any. Characteristics of the dataset will be visualized and examined with respect to suitability to the candidate machine learning models that may be applied. Cleaning and removal of data will be applied based on this analysis.
+
+Also, an exploration of the Goodreads API will be conducted in order to determine which endpoints need to be called to extract a user's reading history as well as potentially other data that may serve as input to the machine learning models.
+
+I will the evaluate potential models for both collaborative and content-based recommendations. My assumption is that Matrix Factorization and specifically a Singular-value decomposition model would be a good approach for collaborative recommendations. 
+
+For content-based recommendations I will look at clustering algorithms in order to categorize books based on their characteristics. Data already in the dataset will be enhanced by retrieving additional about each book using Goodreads' API.
+
+The plan is to deploy the models as part of a web application that provide book recommendations both to users who have an active Goodreads account, and to those that don't.
 
 
 [1] https://en.wikipedia.org/wiki/Recommender_system
+
 
