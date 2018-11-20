@@ -44,7 +44,14 @@ A recommendation engine producing random recommendations will be used for benchm
 
 ### Evaluation metrics
 
-**Prediction accuracy** will be used as the evaluation metric for both models. The data will be split into a training and a test set, where the former will be used to train the models, and the prediction accuracy will be measured on the test set. The initial assumption here is that a valid recommendation corresponds to a user not just having read and rated a book, but actually given the book a high rating.
+For evaluating the peformance of recommender systems there are several different metrics that can be used [2]. For this project I will use **Precision@n** and **Recall@n**, where *n* is the number of books that will be recommended to the user. *Precision* and *Recall* are common metrics used in binary classification models [3], where precision is defined as *the number of true positives divided by the number of elements labeled as belonging to the positive class*. Recall is defined as *the number of true positives divided by the number of elements actually belonging to the positive class.*
+
+For a rating-based recommender system we will need to set a threshold rating, e.g. 3.5, and consider ratings above this value as positives (or *recommended*) and ratings below this value as negatives (or *not recommended*). A *relevant* book in this case is a book that has an actual rating above the threshold.
+
+The definitions for **precision@n** and **recall@n** are then as follows [4]:
+
+Precision@n = (# of recommended items @n that are relevant) / (# of recommended items @n)
+Recall@n = (# of recommended items @n that are relevant) / (total # of relevant items)
 
 ### Project design
 
@@ -60,5 +67,8 @@ The plan is to deploy the models as part of a web application that provide book 
 
 
 [1] https://en.wikipedia.org/wiki/Recommender_system
+[2] [http://bickson.blogspot.com/2012/10/the-10-recommender-system-metrics-you.html](http://bickson.blogspot.com/2012/10/the-10-recommender-system-metrics-you.html)
+[3] [Precision and Recall](https://en.wikipedia.org/wiki/Precision_and_recall)
+[4] [Recall and Precision at k for Recommender Systems](https://medium.com/@m_n_malaeb/recall-and-precision-at-k-for-recommender-systems-618483226c54)
 
 
