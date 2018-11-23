@@ -34,24 +34,18 @@ One challenge with this dataset worth noting right at the outset is that it cont
 
 As mentioned above, the recommendation engine will need to handle two scenarios: Either we have access to a user's preferences (reading history, perhaps with a rating of each book) via Goodreads' APIs, or we will have to ask the user to indicate in some way what kind of books he or she likes to read. In the latter case the solution will be to first present the user with a number of books and ask for some kind of opinion (a rating, a thumbs-up or thumbs-down, or similar) and use this input to produce recommendations.
 
-A collaborative recommendation engine will be implemented based on similar users' preferences (books read along with their ratings) in the dataset. The initial assumption is that a model based on Matrix Factorization should be feasible to build and train based on this dataset. 
+The dataset contains users' ratings on a scale from 1 to 5, and recommendations will be based on predicting the ratings for books that users have not read. The solution will be based on Singular Value Decomposition (SVD) [2], a matrix factorization technique that has become widely used in recommender systems. By creating a 2D *ratings matrix*, where each cell contains the rating given by a user for a particular book, SVD can be used to produce matrices of reduced dimensionality that capture **latent factors** in the relationships between users and books. These matrices can then be used to *predict* ratings for new users and thereby produce recommendations.
 
-A content-based recommendation engine will be implemented based on information about the books themselves. Here the user-defined tags enhanced with additional data extracted via APIs will be the basis for a clustering model.
+The main challenge with this dataset is that the ratings matrix becomes very sparse. 10,000 books and around 50,000 books means we have a total of around 500 million ratings, but the dataset contains only around 10% of those values. For SVD to be used we will need to replace he missing rating values with actual numbers, a process known as **imputation**. I will try different strategies for imputing missing values and measure the performance of the recommendation engine for each one.
 
 ### Benchmark model
 
-A recommendation engine producing random recommendations will be used for benchmarking the different models described above.
+The benchmark model will be based on imputing missing values with random ratings between 1 and 5. I will then expect all subsequent imputation strategies to score better than the benchmark model
 
 ### Evaluation metrics
 
-For evaluating the peformance of recommender systems there are several different metrics that can be used [2]. For this project I will use **Precision@n** and **Recall@n**, where *n* is the number of books that will be recommended to the user. *Precision* and *Recall* are common metrics used in binary classification models [3], where precision is defined as *the number of true positives divided by the number of elements labeled as belonging to the positive class*. Recall is defined as *the number of true positives divided by the number of elements actually belonging to the positive class.*
+For evaluating the performance I will use the **Root Mean Square Error**, or RMSE metric. The original ratings will be split into a training matrix and a test matrix. I will then impute missing values in the training matrix and apply SVD to get the latent factor matrices, which when multiplied will produce a prediction matrix. The RMSE score will be calculated by comparing the predicted ratings with the original ratings in both the training and test matrices. The lower the RMSE the better.
 
-For a rating-based recommender system we will need to set a threshold rating, e.g. 3.5, and consider ratings above this value as positives (or *recommended*) and ratings below this value as negatives (or *not recommended*). A *relevant* book in this case is a book that has an actual rating above the threshold.
-
-The definitions for **precision@n** and **recall@n** are then as follows [4]:
-
-Precision@n = (# of recommended items @n that are relevant) / (# of recommended items @n)
-Recall@n = (# of recommended items @n that are relevant) / (total # of relevant items)
 
 ### Project design
 
@@ -59,16 +53,12 @@ The initial activity will consist of an analysis of the Goodreads dataset, inclu
 
 Also, an exploration of the Goodreads API will be conducted in order to determine which endpoints need to be called to extract a user's reading history as well as potentially other data that may serve as input to the machine learning models.
 
-I will the evaluate potential models for both collaborative and content-based recommendations. My assumption is that Matrix Factorization and specifically a Singular-value decomposition model would be a good approach for collaborative recommendations. 
-
-For content-based recommendations I will look at clustering algorithms in order to categorize books based on their characteristics. Data already in the dataset will be enhanced by retrieving additional about each book using Goodreads' API.
+The main focus in this project will be on the imputation of missing values in the ratings matrix. I will try out different strategies and perform SVD on the resulting imputed ratings matrices, then use these to predict ratings and calculate the RMSE for each one.
 
 The plan is to deploy the models as part of a web application that provide book recommendations both to users who have an active Goodreads account, and to those that don't.
 
 
 [1] https://en.wikipedia.org/wiki/Recommender_system
-[2] [http://bickson.blogspot.com/2012/10/the-10-recommender-system-metrics-you.html](http://bickson.blogspot.com/2012/10/the-10-recommender-system-metrics-you.html)
-[3] [Precision and Recall](https://en.wikipedia.org/wiki/Precision_and_recall)
-[4] [Recall and Precision at k for Recommender Systems](https://medium.com/@m_n_malaeb/recall-and-precision-at-k-for-recommender-systems-618483226c54)
+[2] https://en.wikipedia.org/wiki/Singular_value_decomposition
 
 
