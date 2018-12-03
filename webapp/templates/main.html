@@ -1,0 +1,483 @@
+<html>
+<head>
+  <title>Capstone Book Recommendation System</title>
+  <style>
+  #d2 {
+    visibility: hidden;
+    margin-top: 30px;
+  }
+
+  #divbuttons {
+    viibility: hidden;
+  }
+
+  #sliderDiv {
+    visibility: hidden;
+  }
+
+  #selectDiv {
+    display: none;
+  }
+
+  #sNumberSelected {
+    font-size: 20px;
+    font-weight: bold;
+    color: darkGrey;
+  }
+
+  h2 {
+    margin:auto;
+    width: 50%;
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  h3 {
+    margin: auto;
+    width: 50%;
+    text-align:center;
+    margin-bottom: 20px;
+  }
+
+  #booksdiv {
+    width: 90%;
+    display: grid;
+    grid-template-columns: 250px 250px 250px 250px 250px;
+    grid-gap: 10px;
+    margin: auto;
+    text-align: center;
+  }
+
+  .book {
+    margin: 10px;
+    text-align: center;
+    background-color: #f5f5f5;
+  }
+
+  .book img {
+    width: 88px;
+    height: 160px;
+    margin: 10px;
+  }
+
+  .book .author {
+    font-weight: bold;
+  }
+
+  .book .title {
+    margin-top: 10px;
+    font-weight: normal;
+  }
+
+  .centerdiv {
+    width: 60%;
+    margin: auto;
+    text-align: center;
+  }
+
+  .btn {
+    width: 200px;
+    height: 100px;
+    color: white;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+  }
+
+  .yes {
+    background-color: green;
+    float: left;
+  }
+
+  .no {
+    background-color: blue;
+    float: right;
+  }
+
+
+  .loader {
+      border: 16px solid #f3f3f3; /* Light grey */
+      border-top: 16px solid #3498db; /* Blue */
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+
+  </style>
+  <script>
+
+    var state = {{state}};
+    var ratingsFilter = 0;
+    var selectedBooks = [];
+    var maxSelected = 25;
+
+    function start()
+    {
+      if (state == 0)
+      {
+        hideWheel();
+        document.getElementById("divbuttons").style.visibility = 'visible';
+        document.getElementById("inputdiv").style.visibility = 'hidden';
+      }
+    }
+
+    function yes()
+    {
+      document.getElementById("divbuttons").style.display = 'none';
+      document.getElementById("inputdiv").style.visibility = 'visible';
+
+    }
+
+    function no()
+    {
+      document.getElementById("divbuttons").style.display = 'none';
+      document.getElementById("d3").style.display = 'none';
+      document.getElementById("selectdiv").style.display = 'block';
+
+      s = "SELECT AT LEAST " + maxSelected + " BOOKS THAT YOU REALLY LIKE";
+      document.getElementById("bheader").innerText = s;
+      s = document.getElementById("sNumberSelected");
+      s.innerText = "0";
+
+
+      getRandomBooks();
+    }
+
+    function finishedSelection()
+    {
+      if (selectedBooks.length < maxSelected)
+      {
+        alert("Please select at least " + maxSelected + " books!");
+        return;
+      }
+      document.getElementById("d3").style.display = 'block';
+      document.getElementById("d3").style.visibility = 'visible';
+      document.getElementById("booksdiv").innerHTML = "";
+      document.getElementById("selectdiv").style.display = 'none';
+      document.getElementById("bheader").innerText = "";
+
+
+      url = "/rec/finishedselection";
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      xhr.onreadystatechange = function()
+      {
+        if (this.readyState == 4)
+        {
+          out(this.responseText);
+          findSimilarUsers();
+        }
+      };
+
+      s = "";
+
+      if (selectedBooks.length > 0)
+      {
+        for (ix in selectedBooks)
+        {
+            id = selectedBooks[ix];
+            if (s == "")
+              s = "" + id;
+            else
+              s += "," + id;
+        }
+      }
+
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xhr.send("selectedBooks=" + s);
+    }
+
+    function getRandomBooks()
+    {
+      url = "/rec/getrandombooks";
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      xhr.onreadystatechange = function()
+      {
+        if (this.readyState == 4)
+        {
+          b = eval(this.responseText);
+          displayRandomBooks(b);
+        }
+      };
+
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xhr.send(null);
+    }
+
+
+    function fetchBooks()
+    {
+      document.getElementById("inputdiv").style.display = 'none';
+      showWheel();
+      out("Retrieving your Goodreads reading history...")
+
+      url = "/rec/fetchbooks";
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      xhr.onreadystatechange = function()
+      {
+        if (this.readyState == 4)
+        {
+          hideWheel();
+          out(this.responseText);
+          findSimilarUsers();
+        }
+      };
+
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xhr.send("userid=" + document.getElementById('uid').value);
+    }
+
+    function findSimilarUsers()
+    {
+      out("Finding similar users...");
+      showWheel();
+      url = "/rec/findsimilarusers";
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      xhr.onreadystatechange = function()
+      {
+        if (this.readyState == 4)
+        {
+          hideWheel();
+          out(this.responseText);
+          document.getElementById("d2").style.display = 'none';
+          document.getElementById("d3").style.display = 'none';
+          document.getElementById("sliderDiv").style.display = 'block';
+          document.getElementById("sliderDiv").style.visibility = 'visible';
+        }
+      };
+
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xhr.send(null)
+    }
+
+    function getRecs()
+    {
+      document.getElementById("booksdiv").innerHTML = "";
+      out("Getting recommendations...");
+      showWheel();
+      url = "/rec/getrecs";
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      xhr.onreadystatechange = function()
+      {
+        if (this.readyState == 4)
+        {
+          hideWheel();
+          b = eval(this.responseText);
+          displayRecs(b);
+        }
+      };
+
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xhr.send("filter=" + ratingsFilter);
+
+    }
+
+    function displayRecs(books)
+    {
+      document.getElementById("d3").style.display = 'none';
+
+      document.getElementById("bheader").innerText = "YOUR RECOMMENDATIONS";
+
+      for (i in books)
+      {
+        url = b[i]['img_url'];
+        author = b[i]['author'];
+        title = b[i]['title'];
+        gr_id = b[i]['gr_id'];
+
+        a = document.createElement("a");
+        u = "https://www.goodreads.com/book/show/" + gr_id;
+        a.href = u;
+        a.target = "_";
+        d = document.createElement("div");
+        d.setAttribute("class", "book");
+        im = document.createElement("img");
+        im.src = url;
+        a.appendChild(im)
+        d.appendChild(a);
+
+        br = document.createElement("br");
+        d.appendChild(br);
+
+        a = document.createElement("span");
+        a.setAttribute("class", "author");
+        t = document.createTextNode(author);
+        a.appendChild(t);
+        d.appendChild(a);
+
+        br = document.createElement("br");
+        d.appendChild(br);
+
+        a = document.createElement("span");
+        a.setAttribute("class", "title");
+        t = document.createTextNode(title);
+        a.appendChild(t);
+        d.appendChild(a);
+
+        document.getElementById("booksdiv").appendChild(d);
+      }
+    }
+
+    function displayRandomBooks(books)
+    {
+      document.getElementById("d2").style.display = 'none';
+      document.getElementById("d3").style.display = 'none';
+      document.getElementById("divbuttons").style.display = 'none';
+      document.getElementById("inputdiv").style.display = 'none';
+      document.getElementById("sliderDiv").style.display = 'none';
+
+      document.getElementById("booksdiv").innerHTML = "";
+
+
+      for (i in books)
+      {
+        url = b[i]['img_url'];
+        author = b[i]['author'];
+        title = b[i]['title'];
+        gr_id = b[i]['gr_id'];
+
+        d = document.createElement("div");
+        d.setAttribute("class", "book");
+        im = document.createElement("img");
+        im.src = url;
+        d.appendChild(im)
+
+        br = document.createElement("br");
+        d.appendChild(br);
+
+        a = document.createElement("span");
+        a.setAttribute("class", "author");
+        t = document.createTextNode(author);
+        a.appendChild(t);
+        d.appendChild(a);
+
+        br = document.createElement("br");
+        d.appendChild(br);
+
+        a = document.createElement("span");
+        a.setAttribute("class", "title");
+        t = document.createTextNode(title);
+        a.appendChild(t);
+        d.appendChild(a);
+
+        d.setAttribute("id", "b" + gr_id);
+        d.addEventListener("click", clickedBook,false);
+
+        document.getElementById("booksdiv").appendChild(d);
+      }
+    }
+
+    function clickedBook()
+    {
+        var id = 0;
+        id = this.getAttribute("id");
+        book_id = id.substr(1, id.length);
+
+        d = document.getElementById(id);
+        ix = selectedBooks.indexOf(book_id);
+        if (ix > -1)
+        {
+          d.style.backgroundColor = "#f5f5f5";
+          selectedBooks.splice(ix, 1);
+        }
+        else
+        {
+          d.style.backgroundColor = "#66cdaa";
+          selectedBooks.push(book_id);
+        }
+
+        s = document.getElementById("sNumberSelected");
+        s.innerText = selectedBooks.length;
+
+    }
+
+    function showWheel()
+    {
+      document.getElementById("d2").style.visibility = 'visible';
+    }
+
+    function hideWheel()
+    {
+      document.getElementById("d2").style.visibility = 'hidden';
+    }
+
+    function getFilterValue()
+    {
+      ratingsFilter = document.getElementById("filter").value;
+      getRecs();
+    }
+
+    function out(s)
+    {
+      d3 = document.getElementById("d3");
+      d3.appendChild(document.createElement("br"))
+      d3.appendChild(document.createTextNode(s))
+    }
+
+
+  </script>
+</head>
+
+<body onload="start()">
+<h2>Capstone Book Recommender</h2>
+
+<div id="divbuttons" class="centerdiv">
+<h3>Do you have a Goodreads account?</h3>
+<div class="btn yes" onClick="yes()"><span>YES</span></div>
+<div class="btn no" onClick="no()"><span>NO</span></div>
+</div>
+
+<div id="inputdiv" class="centerdiv">
+<span>Input your Goodreads user id:</span>
+<input type="text" size="10" id="uid" value="4343147">
+<input type="button" value="OK" onclick="fetchBooks()">
+</div>
+
+<div id="d2" class="centerdiv loader"></div>
+
+<div id="d3" class="centerdiv">
+</div>
+
+<div id="sliderDiv" class="centerdiv">
+<h3>Filter ratings count to get less known books recommended</h3>
+<span>Obscure books</span>
+  <input type="range" id="filter" name="rcount" min="50000" max="3000000" step="50000">
+<span>Mainstream books</span>
+  <br><br>
+<input type="button" value="Get recommendations" onCLick="getFilterValue()">
+</div>
+
+<div class="centerdiv">
+<h3 id="bheader"></h3>
+</div>
+
+<div id="selectdiv" class="centerdiv">
+<span>Books selected: </span>
+<span id="sNumberSelected"></span>
+<br><br>
+<input type="button" value="Show more books" onClick="getRandomBooks()" />
+<br><br>
+<input type="button" value="Done" onClick="finishedSelection()" />
+</div>
+
+<div id="booksdiv">
+</div>
+
+</body>
+</html>
