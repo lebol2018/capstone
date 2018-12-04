@@ -3,7 +3,7 @@
 This project implements a book recommendation engine based on a Goodreads dataset available from this [url](https://github.com/zygmuntz/goodbooks-10k).
 
 The project consists of two parts:
-1. A set of Python scripts that generate, impute and apply SVD on the ratings utility matrix, rsulting in a predictions matrix.
+1. A set of Python scripts that generate, impute and apply SVD on the ratings utility matrix, resulting in a predictions matrix.
 2. A Flask-bsed web application using these matrices along with the Goodreads API to produce book recommendations.
 
 ## Dependencies
